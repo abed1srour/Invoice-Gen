@@ -62,8 +62,8 @@ export default function InvoicePreview() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="mx-auto max-w-4xl px-4">
+    <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
+      <div className="mx-auto w-full sm:max-w-4xl px-2 sm:px-4">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">Invoice Preview</h1>
           <div className="flex gap-3">
@@ -97,7 +97,7 @@ export default function InvoicePreview() {
           </div>
         </div>
 
-        <div ref={nodeRef} className="rounded-2xl bg-white shadow print:rounded-none print:shadow-none">
+        <div ref={nodeRef} className="invoice-container rounded-2xl bg-white shadow print:rounded-none print:shadow-none">
           {/* Header with your /public/logo.png */}
           <div className="flex items-start justify-between border-b p-8">
             <div className="flex items-center gap-4">
@@ -115,6 +115,7 @@ export default function InvoicePreview() {
             </div>
           </div>
 
+          <div className="invoice-content">
           {/* Bill to / meta */}
           <div className="grid grid-cols-2 items-start gap-6 border-b bg-gray-100 p-6">
             <div>
@@ -197,6 +198,7 @@ export default function InvoicePreview() {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
@@ -205,6 +207,22 @@ export default function InvoicePreview() {
           body { background: white; }
           .print\\:hidden { display: none !important; }
           @page { size: A4; margin: 10mm; }
+        }
+        
+        /* Force invoice to display at full width on mobile devices */
+        @media (max-width: 768px) {
+          .invoice-container {
+            width: 100vw !important;
+            margin-left: -50vw !important;
+            left: 50% !important;
+            position: relative !important;
+            transform: scale(0.8) !important;
+            transform-origin: top left !important;
+          }
+          
+          .invoice-content {
+            min-width: 800px !important;
+          }
         }
         
         /* Override oklch colors for PDF generation */
