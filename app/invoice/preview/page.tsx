@@ -11,6 +11,7 @@ interface DataShape {
   billTo: { name: string; phone: string };
   meta: { number: number; date: string };
   items: InvoiceItem[];
+  currency?: string;
 }
 
 export default function InvoicePreview() {
@@ -27,13 +28,13 @@ export default function InvoicePreview() {
       billTo: { name: 'Customer', phone: '' },
       meta: { number: 1001, date: new Date().toLocaleDateString() },
       items: [{ id: 1, item: 'Sample item', quantity: 1, price: 100 }],
+      currency: 'USD',
     });
   }, []);
 
   if (!data) return null;
 
-  const { company, billTo, meta, items } = data;
-  const currency = 'USD';
+  const { company, billTo, meta, items, currency = 'USD' } = data;
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style:'currency', currency }).format(n);
   const subtotal = items.reduce((s, it) => {
     const quantity = isNaN(it.quantity) ? 0 : it.quantity;

@@ -19,6 +19,7 @@ export default function InvoiceForm() {
 
   const [billTo, setBillTo] = useState({ name: '', phone: '' });
   const [meta, setMeta] = useState({ number: Math.floor(1000 + Math.random() * 9000), date: new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) });
+  const [currency, setCurrency] = useState('USD');
 
   const [items, setItems] = useState<Item[]>([
     { id: 1, item: '', quantity: NaN, price: NaN },
@@ -33,7 +34,7 @@ export default function InvoiceForm() {
   };
 
   const handlePreview = () => {
-    const data = { company, billTo, meta, items };
+    const data = { company, billTo, meta, items, currency };
     localStorage.setItem('invoiceData', JSON.stringify(data));
     router.push('/invoice/preview');
   };
@@ -183,7 +184,7 @@ export default function InvoiceForm() {
               </svg>
               <span>Invoice Details</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Invoice Number</label>
                 <input 
@@ -209,6 +210,17 @@ export default function InvoiceForm() {
                     Today
                   </button>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Currency</label>
+                <select 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 shadow-sm"
+                  value={currency}
+                  onChange={e => setCurrency(e.target.value)}
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                </select>
               </div>
           </div>
         </section>
@@ -257,7 +269,7 @@ export default function InvoiceForm() {
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-1 lg:col-span-3">
-                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Unit Price ($)</label>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Unit Price ({currency === 'USD' ? '$' : '€'})</label>
                       <input 
                         type="number" 
                         step="0.01" 
