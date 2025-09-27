@@ -23,7 +23,7 @@ export default function InvoicePreview() {
     const raw = localStorage.getItem('invoiceData');
     if (raw) setData(JSON.parse(raw));
     else setData({
-      company: { addr1: 'Bazourieh', addr2: 'Main street', brand: 'Srour Solar Power', phones: '+961 78 863 012', email: 'sroursolarpower@gmail.com', taxRegNo: '5001963' },
+      company: { name: 'SROUR SOLAR POWER', addr1: 'Bazourieh', addr2: 'Main street', brand: 'Srour Solar Power', phones: '+961 78 863 012', email: 'sroursolarpower@gmail.com', taxRegNo: '5001963' },
       billTo: { name: 'Customer', phone: '' },
       meta: { number: 1001, date: new Date().toLocaleDateString() },
       items: [{ id: 1, item: 'Sample item', quantity: 1, price: 100 }],
