@@ -21,11 +21,11 @@ export default function InvoiceForm() {
   const [meta, setMeta] = useState({ number: Math.floor(1000 + Math.random() * 9000), date: new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) });
 
   const [items, setItems] = useState<Item[]>([
-    { id: 1, item: '', quantity: 0, price: 0 },
+    { id: 1, item: '', quantity: NaN, price: NaN },
   ]);
 
   // Add/Remove items
-  const addItem = () => setItems(prev => [...prev, { id: Date.now(), item: '', quantity: 0, price: 0 }]);
+  const addItem = () => setItems(prev => [...prev, { id: Date.now(), item: '', quantity: NaN, price: NaN }]);
   const removeItem = (id: number) => setItems(prev => prev.filter(i => i.id !== id));
 
   const handleItemChange = (id: number, field: keyof Item, value: string | number) => {
@@ -38,7 +38,11 @@ export default function InvoiceForm() {
     router.push('/invoice/preview');
   };
 
-  const total = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  const total = items.reduce((sum, item) => {
+    const quantity = isNaN(item.quantity) ? 0 : item.quantity;
+    const price = isNaN(item.price) ? 0 : item.price;
+    return sum + (quantity * price);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -248,7 +252,7 @@ export default function InvoiceForm() {
                         type="number" 
                         min="0"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 shadow-sm text-sm sm:text-base" 
-                        value={item.quantity} 
+                        value={isNaN(item.quantity) ? '' : item.quantity} 
                         onChange={e => handleItemChange(item.id, 'quantity', e.target.value)} 
                       />
                     </div>
@@ -259,7 +263,7 @@ export default function InvoiceForm() {
                         step="0.01" 
                         min="0"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 shadow-sm text-sm sm:text-base" 
-                        value={item.price} 
+                        value={isNaN(item.price) ? '' : item.price} 
                         onChange={e => handleItemChange(item.id, 'price', e.target.value)} 
                       />
                     </div>

@@ -35,7 +35,11 @@ export default function InvoicePreview() {
   const { company, billTo, meta, items } = data;
   const currency = 'USD';
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style:'currency', currency }).format(n);
-  const subtotal = items.reduce((s, it) => s + it.quantity * it.price, 0);
+  const subtotal = items.reduce((s, it) => {
+    const quantity = isNaN(it.quantity) ? 0 : it.quantity;
+    const price = isNaN(it.price) ? 0 : it.price;
+    return s + (quantity * price);
+  }, 0);
 
   async function downloadPdf() {
     const html2pdf = await loadHtml2Pdf();
@@ -58,14 +62,14 @@ export default function InvoicePreview() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
+    <div className="min-h-screen bg-gray-100 py-8">
       <div className="mx-auto max-w-4xl px-4">
-        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Invoice Preview</h1>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-gray-900">Invoice Preview</h1>
+          <div className="flex gap-3">
             <a 
               href="/invoice/form" 
-              className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -74,7 +78,7 @@ export default function InvoicePreview() {
             </a>
             <button 
               onClick={downloadPdf} 
-              className="inline-flex items-center justify-center px-4 sm:px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+              className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -83,7 +87,7 @@ export default function InvoicePreview() {
             </button>
             <button 
               onClick={() => window.print()} 
-              className="print:hidden inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="print:hidden inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -95,12 +99,12 @@ export default function InvoicePreview() {
 
         <div ref={nodeRef} className="rounded-2xl bg-white shadow print:rounded-none print:shadow-none">
           {/* Header with your /public/logo.png */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between border-b p-4 sm:p-8 space-y-4 sm:space-y-0">
+          <div className="flex items-start justify-between border-b p-8">
             <div className="flex items-center gap-4">
-              <img src="/logo.png" alt="Company logo" className="h-32 sm:h-45 w-auto" />
+              <img src="/logo.png" alt="Company logo" className="h-45 w-auto" />
             </div>
-            <div className="text-center sm:text-right text-sm text-gray-700">
-              <div className="text-xl sm:text-2xl font-semibold text-gray-900">Invoice</div>
+            <div className="text-right text-sm text-gray-700">
+              <div className="text-2xl font-semibold text-gray-900">Invoice</div>
               <div className="mt-4 font-semibold text-gray-900">{company?.name}</div>
               <div className="mt-2">{company?.brand}</div>
               <div>{company?.addr1}</div>
@@ -112,13 +116,13 @@ export default function InvoicePreview() {
           </div>
 
           {/* Bill to / meta */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4 sm:gap-6 border-b bg-gray-100 p-4 sm:p-6">
+          <div className="grid grid-cols-2 items-start gap-6 border-b bg-gray-100 p-6">
             <div>
               <div className="text-xs font-semibold text-gray-600">BILL TO</div>
               <div className="mt-2 font-medium text-gray-900">{billTo.name}</div>
               <div className="text-gray-700">{billTo.phone}</div>
             </div>
-            <div className="text-left sm:text-right text-sm mt-4 sm:mt-0">
+            <div className="text-right text-sm">
               <div className="text-xs font-semibold text-gray-600">BILL INFO</div>
               <div className="mt-2">
                 <div><span className="text-gray-500">Invoice #</span> <span className="ml-2 font-semibold text-gray-900">{meta.number}</span></div>
@@ -128,28 +132,30 @@ export default function InvoicePreview() {
           </div>
 
           {/* Items */}
-          <div className="px-3 sm:px-6 pb-2 pt-4 overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm table-fixed min-w-[600px]">
+          <div className="px-6 pb-2 pt-4">
+            <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-y bg-gray-50 text-gray-600">
-                  <th className="w-2/5 py-2 sm:py-3 px-2 sm:px-3 text-left font-semibold">Item</th>
-                  <th className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-center font-semibold">Quantity</th>
-                  <th className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-center font-semibold">Price</th>
-                  <th className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-right font-semibold">Amount</th>
+                  <th className="w-2/5 py-3 px-3 text-left font-semibold">Item</th>
+                  <th className="w-1/5 py-3 px-3 text-center font-semibold">Quantity</th>
+                  <th className="w-1/5 py-3 px-3 text-center font-semibold">Price</th>
+                  <th className="w-1/5 py-3 px-3 text-right font-semibold">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((it) => {
-                  const amount = it.quantity * it.price;
+                  const quantity = isNaN(it.quantity) ? 0 : it.quantity;
+                  const price = isNaN(it.price) ? 0 : it.price;
+                  const amount = quantity * price;
                   return (
                     <tr key={it.id} className="border-b align-top">
-                      <td className="w-2/5 py-2 sm:py-3 px-2 sm:px-3 text-gray-900">
+                      <td className="w-2/5 py-3 px-3 text-gray-900">
                         <div className="font-medium">{it.item || '—'}</div>
                         {it.note && <div className="mt-1 text-xs text-gray-500">{it.note}</div>}
                       </td>
-                      <td className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-center text-gray-700">{it.quantity}</td>
-                      <td className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-center text-gray-700">{fmt(it.price)}</td>
-                      <td className="w-1/5 py-2 sm:py-3 px-2 sm:px-3 text-right font-medium text-gray-900">{fmt(amount)}</td>
+                      <td className="w-1/5 py-3 px-3 text-center text-gray-700">{isNaN(it.quantity) ? '—' : it.quantity}</td>
+                      <td className="w-1/5 py-3 px-3 text-center text-gray-700">{isNaN(it.price) ? '—' : fmt(it.price)}</td>
+                      <td className="w-1/5 py-3 px-3 text-right font-medium text-gray-900">{fmt(amount)}</td>
                     </tr>
                   );
                 })}
@@ -158,7 +164,7 @@ export default function InvoicePreview() {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6">
+          <div className="grid grid-cols-2 gap-6 p-6">
             <div />
             <div className="text-sm">
               <div className="flex justify-between border-b py-1">
@@ -173,15 +179,15 @@ export default function InvoicePreview() {
           </div>
 
           {/* Footer */}
-          <div className="px-4 sm:px-6 pb-6 sm:pb-8">
-            <div className="border-t border-gray-200 pt-4 sm:pt-6">
+          <div className="px-6 pb-8">
+            <div className="border-t border-gray-200 pt-6">
               <div className="text-xs text-gray-600 leading-relaxed">
-                <p className="text-gray-500 italic text-center sm:text-left">
+                <p className="text-gray-500 italic">
                   Thank you for choosing {company?.brand || 'our services'}. We appreciate your business and look forward to serving you again.
                 </p>
               </div>
               
-              <div className="mt-4 sm:mt-6 text-center sm:text-right">
+              <div className="mt-6 text-right">
                 <div className="font-semibold text-gray-700">{company?.brand}</div>
                 <div className="text-xs text-gray-500">{new Date().toLocaleDateString('en-US', { 
                   year: 'numeric', 
