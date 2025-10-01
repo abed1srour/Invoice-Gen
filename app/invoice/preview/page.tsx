@@ -12,6 +12,8 @@ interface DataShape {
   meta: { number: number; date: string };
   items: InvoiceItem[];
   currency?: string;
+  eurRate?: number;
+  useCurrencyConversion?: boolean;
 }
 
 export default function InvoicePreview() {
@@ -24,7 +26,7 @@ export default function InvoicePreview() {
     const raw = localStorage.getItem('invoiceData');
     if (raw) setData(JSON.parse(raw));
     else setData({
-      company: { name: 'SROUR SOLAR POWER', addr1: 'Bazourieh', addr2: 'Main street', brand: 'Srour Solar Power', phones: '+961 78 863 012', email: 'sroursolarpower@gmail.com', taxRegNo: '5001963' },
+      company: { name: 'SROUR SOLAR POWER', addr1: 'Bazourieh', addr2: 'Main street', brand: 'Srour Solar Power', phones: '+961 78 863 012', email: 'sroursolarpower@gmail.com', taxRegNo: '5001963', logo: '/logo.png' },
       billTo: { name: 'Customer', phone: '' },
       meta: { number: 1001, date: new Date().toLocaleDateString() },
       items: [{ id: 1, item: 'Sample item', quantity: 1, price: 100 }],
@@ -34,9 +36,18 @@ export default function InvoicePreview() {
 
   if (!data) return null;
 
-  const { company, billTo, meta, items, currency = 'USD' } = data;
+  const { company, billTo, meta, items, currency = 'USD', eurRate = 0, useCurrencyConversion = false } = data;
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style:'currency', currency }).format(n);
-  const subtotal = items.reduce((s, it) => {
+  
+  // Apply currency conversion if enabled and rate is set
+  const convertedItems = useCurrencyConversion && currency === 'EUR' && eurRate > 0
+    ? items.map(item => ({
+        ...item,
+        price: item.price * eurRate // Convert EUR prices to USD for calculation
+      }))
+    : items;
+    
+  const subtotal = convertedItems.reduce((s, it) => {
     const quantity = isNaN(it.quantity) ? 0 : it.quantity;
     const price = isNaN(it.price) ? 0 : it.price;
     return s + (quantity * price);
@@ -45,8 +56,26 @@ export default function InvoicePreview() {
   async function downloadPdf() {
     const html2pdf = await loadHtml2Pdf();
     if (!nodeRef.current) return;
+    
+    // Store original styles
+    const originalWidth = nodeRef.current.style.width;
+    const originalTransform = nodeRef.current.style.transform;
+    const originalPosition = nodeRef.current.style.position;
+    const originalMarginLeft = nodeRef.current.style.marginLeft;
+    const originalLeft = nodeRef.current.style.left;
+    
+    // Force desktop view for PDF generation - override all responsive styles
+    nodeRef.current.style.width = '794px';
+    nodeRef.current.style.transform = 'none';
+    nodeRef.current.style.position = 'static';
+    nodeRef.current.style.marginLeft = '0';
+    nodeRef.current.style.left = '0';
+    
+    // Add temporary class to force desktop layout
+    nodeRef.current.classList.add('generating-pdf');
+    
     await html2pdf().from(nodeRef.current).set({
-      margin: [10,10,10,10],
+      margin: [10, 10, 10, 10],
       filename: `invoice-${meta.number}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
@@ -55,11 +84,19 @@ export default function InvoicePreview() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
-        width: nodeRef.current.scrollWidth,
-        height: nodeRef.current.scrollHeight
+        width: 794,
+        windowWidth: 794
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     }).save();
+    
+    // Restore original styles
+    nodeRef.current.style.width = originalWidth;
+    nodeRef.current.style.transform = originalTransform;
+    nodeRef.current.style.position = originalPosition;
+    nodeRef.current.style.marginLeft = originalMarginLeft;
+    nodeRef.current.style.left = originalLeft;
+    nodeRef.current.classList.remove('generating-pdf');
   }
 
   return (
@@ -98,11 +135,12 @@ export default function InvoicePreview() {
           </div>
         </div>
 
-        <div ref={nodeRef} className="invoice-container rounded-2xl bg-white shadow print:rounded-none print:shadow-none">
-          {/* Header with your /public/logo.png */}
+        <div className="print:flex print:justify-center print:items-center print:min-h-screen">
+          <div ref={nodeRef} className="invoice-container rounded-2xl bg-white shadow print:rounded-none print:shadow-none print:mx-auto">
+          {/* Header with company logo */}
           <div className="flex items-start justify-between border-b p-8">
             <div className="flex items-center gap-4">
-              <img src="/logo.png" alt="Company logo" className="h-45 w-auto" />
+              <img src={company?.logo || '/logo.png'} alt="Company logo" className="h-45 w-auto" />
             </div>
             <div className="text-right text-sm text-gray-700">
               <div className="text-2xl font-semibold text-gray-900">Invoice</div>
@@ -112,7 +150,6 @@ export default function InvoicePreview() {
               <div>{company?.addr2}</div>
               <div>{company?.phones}</div>
               <div>{company?.email}</div>
-              {company?.taxRegNo && <div>Tax Reg No.: {company.taxRegNo}</div>}
             </div>
           </div>
 
@@ -138,26 +175,26 @@ export default function InvoicePreview() {
             <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-y bg-gray-50 text-gray-600">
-                  <th className="w-2/5 py-3 px-3 text-left font-semibold">Item</th>
-                  <th className="w-1/5 py-3 px-3 text-center font-semibold">Quantity</th>
-                  <th className="w-1/5 py-3 px-3 text-center font-semibold">Price</th>
-                  <th className="w-1/5 py-3 px-3 text-right font-semibold">Amount</th>
+                  <th className="w-1/2 py-3 px-3 text-left font-semibold">Item</th>
+                  <th className="w-1/6 py-3 px-3 text-center font-semibold">Quantity</th>
+                  <th className="w-1/6 py-3 px-3 text-center font-semibold">Price</th>
+                  <th className="w-1/6 py-3 px-3 text-right font-semibold">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((it) => {
+                {convertedItems.map((it) => {
                   const quantity = isNaN(it.quantity) ? 0 : it.quantity;
                   const price = isNaN(it.price) ? 0 : it.price;
                   const amount = quantity * price;
                   return (
                     <tr key={it.id} className="border-b align-top">
-                      <td className="w-2/5 py-3 px-3 text-gray-900">
+                      <td className="w-1/2 py-3 px-3 text-gray-900">
                         <div className="font-medium">{it.item || '—'}</div>
                         {it.note && <div className="mt-1 text-xs text-gray-500">{it.note}</div>}
                       </td>
-                      <td className="w-1/5 py-3 px-3 text-center text-gray-700">{isNaN(it.quantity) ? '—' : it.quantity}</td>
-                      <td className="w-1/5 py-3 px-3 text-center text-gray-700">{isNaN(it.price) ? '—' : fmt(it.price)}</td>
-                      <td className="w-1/5 py-3 px-3 text-right font-medium text-gray-900">{fmt(amount)}</td>
+                      <td className="w-1/6 py-3 px-3 text-center text-gray-700">{isNaN(it.quantity) ? '—' : it.quantity}</td>
+                      <td className="w-1/6 py-3 px-3 text-center text-gray-700">{isNaN(it.price) ? '—' : fmt(it.price)}</td>
+                      <td className="w-1/6 py-3 px-3 text-right font-medium text-gray-900">{fmt(amount)}</td>
                     </tr>
                   );
                 })}
@@ -200,6 +237,7 @@ export default function InvoicePreview() {
             </div>
           </div>
           </div>
+          </div>
         </div>
       </div>
 
@@ -210,9 +248,24 @@ export default function InvoicePreview() {
           @page { size: A4; margin: 10mm; }
         }
         
+        /* Force desktop layout during PDF generation - highest priority */
+        .generating-pdf {
+          width: 794px !important;
+          transform: none !important;
+          position: static !important;
+          margin-left: 0 !important;
+          left: 0 !important;
+          max-width: 794px !important;
+        }
+        
+        .generating-pdf .invoice-content {
+          min-width: 794px !important;
+          width: 794px !important;
+        }
+        
         /* Force invoice to display at full width on mobile devices */
         @media (max-width: 768px) {
-          .invoice-container {
+          .invoice-container:not(.generating-pdf) {
             width: 100vw !important;
             margin-left: -50vw !important;
             left: 50% !important;
@@ -223,6 +276,24 @@ export default function InvoicePreview() {
           
           .invoice-content {
             min-width: 800px !important;
+          }
+        }
+        
+        /* PDF generation styles */
+        @media print {
+          .invoice-container {
+            width: 100% !important;
+            max-width: 800px !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+          
+          .print\\:flex {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            min-height: 100vh !important;
           }
         }
         
