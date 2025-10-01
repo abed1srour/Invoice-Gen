@@ -99,9 +99,9 @@ export default function InvoicePreview() {
     nodeRef.current.classList.remove('generating-pdf');
   }
 
-  async function shareToWhatsApp() {
+  async function generatePdfBlob() {
     const html2pdf = await loadHtml2Pdf();
-    if (!nodeRef.current) return;
+    if (!nodeRef.current) return null;
     
     // Store original styles
     const originalWidth = nodeRef.current.style.width;
@@ -136,7 +136,25 @@ export default function InvoicePreview() {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       }).outputPdf('blob');
       
-      // Create a file from the blob
+      return pdfBlob;
+    } finally {
+      // Restore original styles
+      if (nodeRef.current) {
+        nodeRef.current.style.width = originalWidth;
+        nodeRef.current.style.transform = originalTransform;
+        nodeRef.current.style.position = originalPosition;
+        nodeRef.current.style.marginLeft = originalMarginLeft;
+        nodeRef.current.style.left = originalLeft;
+        nodeRef.current.classList.remove('generating-pdf');
+      }
+    }
+  }
+
+  async function shareToWhatsApp() {
+    try {
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) return;
+      
       const file = new File([pdfBlob], `invoice-${meta.number}.pdf`, { type: 'application/pdf' });
       
       // Check if Web Share API is available
@@ -160,26 +178,239 @@ export default function InvoicePreview() {
         alert('PDF downloaded! Please share it manually via WhatsApp from your downloads folder.');
       }
     } catch (error) {
-      console.error('Error sharing PDF:', error);
+      console.error('Error sharing to WhatsApp:', error);
       alert('Unable to share. The PDF will be downloaded instead.');
       downloadPdf();
-    } finally {
-      // Restore original styles
-      nodeRef.current.style.width = originalWidth;
-      nodeRef.current.style.transform = originalTransform;
-      nodeRef.current.style.position = originalPosition;
-      nodeRef.current.style.marginLeft = originalMarginLeft;
-      nodeRef.current.style.left = originalLeft;
-      nodeRef.current.classList.remove('generating-pdf');
+    }
+  }
+
+  async function shareViaEmail() {
+    try {
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) return;
+      
+      const file = new File([pdfBlob], `invoice-${meta.number}.pdf`, { type: 'application/pdf' });
+      
+      // Try Web Share API first
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice #${meta.number}`,
+          text: `Invoice #${meta.number} - ${billTo.name}`,
+        });
+      } else {
+        // Fallback: download and open mailto
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${meta.number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Open email client
+        window.location.href = `mailto:?subject=Invoice%20%23${meta.number}&body=Please%20find%20the%20invoice%20in%20your%20downloads%20folder.`;
+      }
+    } catch (error) {
+      console.error('Error sharing via email:', error);
+      downloadPdf();
+    }
+  }
+
+  async function shareToTelegram() {
+    try {
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) return;
+      
+      const file = new File([pdfBlob], `invoice-${meta.number}.pdf`, { type: 'application/pdf' });
+      
+      // Try Web Share API
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice #${meta.number}`,
+          text: `Invoice #${meta.number} - ${billTo.name}`,
+        });
+      } else {
+        // Fallback: download
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${meta.number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('PDF downloaded! Please share it manually via Telegram from your downloads folder.');
+      }
+    } catch (error) {
+      console.error('Error sharing to Telegram:', error);
+      downloadPdf();
+    }
+  }
+
+  async function shareToMessenger() {
+    try {
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) return;
+      
+      const file = new File([pdfBlob], `invoice-${meta.number}.pdf`, { type: 'application/pdf' });
+      
+      // Try Web Share API
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice #${meta.number}`,
+          text: `Invoice #${meta.number} - ${billTo.name}`,
+        });
+      } else {
+        // Fallback: download
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${meta.number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('PDF downloaded! Please share it manually via Messenger from your downloads folder.');
+      }
+    } catch (error) {
+      console.error('Error sharing to Messenger:', error);
+      downloadPdf();
+    }
+  }
+
+  async function shareGeneric() {
+    try {
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) return;
+      
+      const file = new File([pdfBlob], `invoice-${meta.number}.pdf`, { type: 'application/pdf' });
+      
+      // Use Web Share API
+      if (navigator.share) {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Invoice #${meta.number}`,
+            text: `Invoice #${meta.number} - ${billTo.name}`,
+          });
+        } else {
+          // Share without file
+          await navigator.share({
+            title: `Invoice #${meta.number}`,
+            text: `Invoice #${meta.number} - ${billTo.name}`,
+          });
+          downloadPdf();
+        }
+      } else {
+        // Fallback: just download
+        downloadPdf();
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      downloadPdf();
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
-      <div className="mx-auto w-full sm:max-w-4xl px-2 sm:px-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">Invoice Preview</h1>
-          <div className="flex gap-3">
+    <div className="min-h-screen bg-gray-100 sm:py-8 mobile-invoice-wrapper">
+      <div className="mx-auto w-full sm:max-w-4xl sm:px-4">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="hidden sm:block text-lg font-semibold text-gray-900 mb-4">Invoice Preview</h1>
+          
+          {/* Mobile Buttons - Stacked */}
+          <div className="flex sm:hidden flex-col gap-2 mb-2 px-2 mobile-buttons mt-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-gray-200">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 text-center">Share Invoice</h3>
+              
+              {/* Primary sharing options */}
+              <div className="space-y-2">
+                <button 
+                  onClick={shareToWhatsApp} 
+                  className="w-full flex items-center justify-center px-5 py-3 text-sm font-bold text-white bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-md active:scale-95 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  </svg>
+                  WhatsApp
+                </button>
+                
+                <button 
+                  onClick={downloadPdf} 
+                  className="w-full flex items-center justify-center px-5 py-3 text-sm font-bold text-white bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md active:scale-95 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download PDF
+                </button>
+              </div>
+              
+              {/* More sharing options */}
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <p className="text-xs font-semibold text-gray-600 mb-2">More Options</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={shareViaEmail}
+                    className="flex flex-col items-center justify-center px-3 py-3 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 active:scale-95 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email
+                  </button>
+                  
+                  <button 
+                    onClick={shareToTelegram}
+                    className="flex flex-col items-center justify-center px-3 py-3 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 active:scale-95 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.121.099.154.232.17.326.016.094.037.308.02.472z"/>
+                    </svg>
+                    Telegram
+                  </button>
+                  
+                  <button 
+                    onClick={shareToMessenger}
+                    className="flex flex-col items-center justify-center px-3 py-3 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 active:scale-95 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.974 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259L10.732 8l3.13 3.259L19.752 8l-6.559 6.963z"/>
+                    </svg>
+                    Messenger
+                  </button>
+                  
+                  <button 
+                    onClick={shareGeneric}
+                    className="flex flex-col items-center justify-center px-3 py-3 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 active:scale-95 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    More
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <a 
+              href="/invoice/form" 
+              className="flex items-center justify-center px-6 py-3 text-sm font-bold text-gray-700 bg-white border-2 border-gray-300 rounded-xl shadow-md active:scale-95 transition-all duration-200"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Form
+            </a>
+          </div>
+
+          {/* Desktop Buttons - Horizontal */}
+          <div className="hidden sm:flex items-center justify-end gap-3">
             <a 
               href="/invoice/form" 
               className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -191,7 +422,7 @@ export default function InvoicePreview() {
             </a>
             <button 
               onClick={downloadPdf} 
-              className="hidden sm:inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+              className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -199,17 +430,8 @@ export default function InvoicePreview() {
               Download PDF
             </button>
             <button 
-              onClick={shareToWhatsApp} 
-              className="sm:hidden inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 border border-transparent rounded-lg shadow-sm hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
-            >
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              Share via WhatsApp
-            </button>
-            <button 
               onClick={() => window.print()} 
-              className="print:hidden hidden sm:inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="print:hidden inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -219,8 +441,8 @@ export default function InvoicePreview() {
           </div>
         </div>
 
-        <div className="print:flex print:justify-center print:items-center print:min-h-screen">
-          <div ref={nodeRef} className="invoice-container rounded-2xl bg-white shadow print:rounded-none print:shadow-none print:mx-auto">
+        <div className="print:flex print:justify-center print:items-center print:min-h-screen invoice-wrapper-mobile hidden sm:block">
+          <div ref={nodeRef} className="invoice-container rounded-2xl bg-white shadow print:rounded-none print:shadow-none print:mx-auto mx-2 sm:mx-0">
           {/* Header with company logo */}
           <div className="flex items-start justify-between border-b p-8">
             <div className="flex items-center gap-4">
@@ -347,20 +569,62 @@ export default function InvoicePreview() {
           width: 794px !important;
         }
         
-        /* Force invoice to display at full width on mobile devices */
+        /* Zoom out to show full invoice on mobile devices */
         @media (max-width: 768px) {
+          /* Main wrapper - allow scrolling if needed */
+          .mobile-invoice-wrapper {
+            padding-top: 0 !important;
+            padding-bottom: 1rem !important;
+          }
+          
+          /* Buttons stay at natural position */
+          .mobile-buttons {
+            position: relative;
+            z-index: 10;
+          }
+          
+          /* Invoice wrapper on mobile */
+          .invoice-wrapper-mobile {
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+            display: flex !important;
+            justify-content: center !important;
+            padding: 0.5rem 0 !important;
+          }
+          
+          /* Invoice container - set to full A4 width */
           .invoice-container:not(.generating-pdf) {
             width: 794px !important;
             max-width: none !important;
-            margin-left: calc(-397px + 50vw) !important;
+            min-width: 794px !important;
+            margin: 0 !important;
             position: relative !important;
-            left: 50% !important;
-            transform: translateX(-50%) scale(0.45) !important;
-            transform-origin: top center !important;
+            transform-origin: top left !important;
+            border-radius: 0.5rem !important;
+          }
+          
+          /* Calculate scale to fit screen width */
+          @supports (width: 100vw) {
+            .invoice-container:not(.generating-pdf) {
+              transform: scale(calc((100vw - 16px) / 794)) !important;
+              margin-left: calc((100vw - 16px - (794px * (100vw - 16px) / 794)) / 2) !important;
+            }
           }
           
           .invoice-content {
             min-width: 794px !important;
+            width: 794px !important;
+          }
+        }
+        
+        /* Fine-tune for very small screens */
+        @media (max-width: 400px) {
+          @supports (width: 100vw) {
+            .invoice-container:not(.generating-pdf) {
+              transform: scale(calc((100vw - 12px) / 794)) !important;
+              margin-left: calc((100vw - 12px - (794px * (100vw - 12px) / 794)) / 2) !important;
+            }
           }
         }
         

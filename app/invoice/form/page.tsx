@@ -789,50 +789,67 @@ export default function InvoiceForm() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center px-4 sm:px-0 mt-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 px-4 sm:px-0 mt-8">
             <button 
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
+              className={`group relative flex-1 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base overflow-hidden ${
                 currentStep === 1 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 hover:from-slate-200 hover:to-slate-300 shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl active:scale-98 sm:active:scale-95'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Previous</span>
+              <div className={`relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-sm sm:shadow-md flex items-center justify-center transition-transform duration-300 ${currentStep !== 1 ? 'group-hover:-translate-x-1' : ''}`}>
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </div>
+              <span className="relative z-10">Previous</span>
+              {currentStep !== 1 && (
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              )}
             </button>
 
-            <div className="flex space-x-3">
-              {currentStep < totalSteps ? (
-                <button 
-                  onClick={nextStep}
-                  disabled={!isStepValid()}
-                  className={`px-6 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
-                    !isStepValid()
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
-                  }`}
-                >
-                  <span>Next</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            {currentStep < totalSteps ? (
+              <button 
+                onClick={nextStep}
+                disabled={!isStepValid()}
+                className={`group relative flex-1 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base overflow-hidden ${
+                  !isStepValid()
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-2xl hover:shadow-blue-500/30 sm:hover:shadow-blue-500/50 active:scale-98 sm:active:scale-95'
+                }`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10">Next Step</span>
+                <div className={`relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center transition-transform duration-300 ${isStepValid() ? 'group-hover:translate-x-1' : ''}`}>
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
-                </button>
-              ) : (
-                <button 
-                  onClick={handlePreview}
-                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center space-x-2 text-sm font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </div>
+                {isStepValid() && (
+                  <>
+                    <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                    <div className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 bg-blue-300 opacity-20 rounded-full blur-xl group-hover:scale-125 transition-transform duration-700"></div>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button 
+                onClick={handlePreview}
+                className="group relative flex-1 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 text-white shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-2xl hover:shadow-emerald-500/30 sm:hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base overflow-hidden active:scale-98 sm:active:scale-95"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-green-400 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span>Generate Invoice</span>
-                </button>
-              )}
-            </div>
+                </div>
+                <span className="relative z-10">Generate Invoice</span>
+                <div className="hidden sm:block absolute top-0 left-1/4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                <div className="hidden sm:block absolute bottom-0 right-1/4 w-24 h-24 bg-teal-300 opacity-20 rounded-full blur-xl group-hover:scale-125 transition-transform duration-700"></div>
+              </button>
+            )}
           </div>
         </div>
       </div>
