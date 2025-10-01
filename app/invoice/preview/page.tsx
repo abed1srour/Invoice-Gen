@@ -455,15 +455,6 @@ export default function InvoicePreview() {
               </svg>
               Download PDF
             </button>
-            <button 
-              onClick={() => window.print()} 
-              className="print:hidden inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Print
-            </button>
           </div>
         </div>
 
@@ -617,21 +608,56 @@ export default function InvoicePreview() {
         }
         
         
-        /* PDF generation styles */
+        /* Print styles */
         @media print {
+          body { 
+            background: white !important; 
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          .print\\:hidden { 
+            display: none !important; 
+          }
+          
+          /* Hide all navigation and buttons when printing */
+          .mobile-buttons,
+          .mobile-invoice-wrapper,
+          .bg-white.border-t.border-gray-200,
+          .flex.sm\\:flex.items-center.justify-end.gap-3,
+          .bg-gray-100.sm\\:py-8,
+          .mx-auto.w-full.sm\\:max-w-4xl.sm\\:px-4,
+          .mb-4.sm\\:mb-6,
+          .hidden.sm\\:block.text-lg.font-semibold.text-gray-900.mb-4 {
+            display: none !important;
+          }
+          
+          /* Show only invoice content when printing */
+          .invoice-wrapper-mobile {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            min-height: 100vh !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
           .invoice-container {
             width: 100% !important;
             max-width: 800px !important;
             margin: 0 auto !important;
             padding: 0 !important;
             display: block !important;
+            background: white !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
           }
           
-          .print\\:flex {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            min-height: 100vh !important;
+          /* Ensure proper print layout */
+          @page { 
+            size: A4; 
+            margin: 10mm; 
           }
         }
         
