@@ -350,16 +350,17 @@ export default function InvoicePreview() {
         /* Force invoice to display at full width on mobile devices */
         @media (max-width: 768px) {
           .invoice-container:not(.generating-pdf) {
-            width: 100vw !important;
-            margin-left: -50vw !important;
-            left: 50% !important;
+            width: 794px !important;
+            max-width: none !important;
+            margin-left: calc(-397px + 50vw) !important;
             position: relative !important;
-            transform: scale(0.8) !important;
-            transform-origin: top left !important;
+            left: 50% !important;
+            transform: translateX(-50%) scale(0.45) !important;
+            transform-origin: top center !important;
           }
           
           .invoice-content {
-            min-width: 800px !important;
+            min-width: 794px !important;
           }
         }
         
